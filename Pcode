@@ -1,0 +1,2758 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define CONSTTK 1  // const
+#define INTTK 2    // int
+#define CHARTK 3   // char
+#define VOIDTK 4   // void
+#define MAINTK 5   // main
+#define IFTK 6     // if
+#define ELSETK 7   // else
+#define DOTK 8     // do
+#define WHILETK 9  // while
+#define FORTK 10   // for
+#define SCANFTK 11 // scanf
+#define PRINTFTK 12// printf
+#define RETRUNTK 13// return
+#define PLUS 14    // +
+#define MINU 15    // -
+#define MULT 16    // *
+#define DIV 17     // /
+#define LSS 18     // <
+#define LEQ 19     // <=
+#define GRE 20     // >
+#define GEQ 21     // >=
+#define EQL 22     // ==
+#define NEQ 23     // !=
+#define ASSIGN 24  // =
+#define SEMICN 25  // ;
+#define COMMA 26   // ,
+#define LPARENT 27 // (
+#define RPARENT 28 // )
+#define LBRACK 29  // [
+#define RBRACK 30  // ]
+#define LBRACE 31  // {
+#define RBRACE 32  // }
+#define IDENFR 33  // biaozhifu
+#define INTCON 34  // zhengxingchangliang
+#define CHARCON 35 // zifuchangliang
+#define STRCON 36  // zifuchuan
+
+/*---------------------------------------------*/
+#define ILLEGALSYMBOL 37 //不合法字符和不符合词法
+#define REDEFINENAME 38  //重定义名字
+#define UNDEFINENAME 39  //无定义名字
+#define HSCSNUMBERBPP 40 //函数参数个数不匹配
+#define HSCSTYPEBPP 41 //函数参数类型不匹配
+#define CONDITION_ILLEGAL_TYPE 42 //条件判断不合法类型
+#define UNRETURN_ILLEGAL_USE 43 //无返回值函数存在不匹配的return语句
+#define RETURN_NO_RETURN 44 //有返回值函数缺少return语句或存在不匹配返回语句
+#define SZXIABIAO_UNINT 45 //数组下标只能是整形表达式
+#define CHANGE_CONST 46 //改变常量值
+#define LACK_FENHAO 47 //应该是分号 ;
+#define LACK_YOUXIAOKUOH 48 //应该是右小括号 )
+#define LACK_YOUZHONGKUOH 49 //应该是右中括号 ]
+#define LACK_WHILE 50 //do-while缺少while
+#define CONST_ILLEGAL_TYPE 51 //常量定义中=后面只能是整形或字符型常量
+
+/*---------------------------------------------*/
+
+/*---------------------------------------------*/
+
+char stayword[100][100]={"const","int","char","void","main","if","else","do","while","for","scanf","printf","return","+","-","*","/","<","<=",">",">=","==","!=","=",";",",","(",")","[","]","{","}"};
+char tkstay[100][100]={"CONSTTK","INTTK","CHARTK","VOIDTK","MAINTK","IFTK","ELSETK","DOTK","WHILETK","FORTK","SCANFTK","PRINTFTK","RETURNTK","PLUS","MINU","MULT","DIV","LSS","LEQ","GRE","GEQ","EQL","NEQ","ASSIGN","SEMICN","COMMA","LPARENT","RPARENT","LBRACK","RBRACK","LBRACE","RBRACE","IDENFR","INTCON","CHARCON","STRCON"};
+char line[204800];
+int symId;
+unsigned long lenthofline=0;
+unsigned long indexofline=0;
+char ch=' ';
+int code1= 0;
+int num=0;
+FILE *ip;
+FILE *op;
+int istab(){
+    return ch == '\t'?1:0;
+}
+int isnewline(){
+    return ch == '\n'?1:0;
+}
+int isletter(){
+    if((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||ch=='_'){
+        return 1;
+    }
+    else
+        return 0;
+}
+int isr(){
+    return ch=='\r'?1:0;
+}
+int ischar(){
+    return (ch==32||ch==33||(ch >= 35 && ch <= 126)) ? 1 : 0 ;
+}
+int isplus(){
+    return ch=='+'?1:0;
+}
+int isminu(){
+    return ch=='-'?1:0;
+}
+int ismult(){
+    return ch=='*'?1:0;
+}
+int isdiv(){
+    return ch=='/'?1:0;
+}
+int islss(){
+    return ch=='<'?1:0;
+}
+int isgre(){
+    return ch=='>'?1:0;
+}
+int iseql(){
+    return ch=='='?1:0;
+}
+int isneq(){
+    return ch=='!'?1:0;
+}
+int issem(){
+    return ch==';'?1:0;
+}
+int iscom(){
+    return ch==','?1:0;
+}
+int islpa(){
+    return ch=='('?1:0;
+}
+int isrpa(){
+    return ch==')'?1:0;
+}
+int islbr(){
+    return ch=='['?1:0;
+}
+int isrbr(){
+    return ch==']'?1:0;
+}
+int islbrace(){
+    return ch=='{'?1:0;
+}
+int isrbrace(){
+    return ch=='}'?1:0;
+}
+int j=0;
+int linenum=0;
+char a[512]={'\0'};
+/*--------------------错误处理-----------------------*/
+void error(int type,int linenum1){
+    switch (type) {
+        case ILLEGALSYMBOL:
+            //printf("%d a\n",linenum1);
+            //fprintf(op,"%d a\n",linenum1);
+            break;
+        case REDEFINENAME:
+            //printf("%d b\n",linenum1);
+            //fprintf(op,"%d b\n",linenum1);
+            break;
+        case UNDEFINENAME:
+            //printf("%d c\n",linenum1);
+            //fprintf(op,"%d c\n",linenum1);
+            break;
+        case HSCSNUMBERBPP:
+            //printf("%d d\n",linenum1);
+            //fprintf(op,"%d d\n",linenum1);
+            break;
+        case HSCSTYPEBPP:
+            //printf("%d e\n",linenum1);
+            //fprintf(op,"%d e\n",linenum1);
+            break;
+        case CONDITION_ILLEGAL_TYPE:
+            //printf("%d f\n",linenum1);
+            //fprintf(op,"%d f\n",linenum1);
+            break;
+        case UNRETURN_ILLEGAL_USE:
+            //printf("%d g\n",linenum1);
+            //fprintf(op,"%d g\n",linenum1);
+            break;
+        case RETURN_NO_RETURN:
+            //printf("%d h\n",linenum1);
+            //fprintf(op,"%d h\n",linenum1);
+            break;
+        case SZXIABIAO_UNINT:
+            //printf("%d i\n",linenum1);
+            //fprintf(op,"%d i\n",linenum1);
+            break;
+        case CHANGE_CONST:
+            //printf("%d j\n",linenum1);
+            //fprintf(op,"%d j\n",linenum1);
+            break;
+        case LACK_FENHAO:
+            //printf("%d k\n",linenum1);
+            //fprintf(op,"%d k\n",linenum1);
+            break;
+        case LACK_YOUXIAOKUOH:
+            //printf("%d l\n",linenum1);
+            //fprintf(op,"%d l\n",linenum1);
+            break;
+        case LACK_YOUZHONGKUOH:
+            //printf("%d m\n",linenum1);
+            //fprintf(op,"%d m\n",linenum1);
+            break;
+        case LACK_WHILE:
+            //printf("%d n\n",linenum1);
+            //fprintf(op,"%d n\n",linenum1);
+            break;
+        case CONST_ILLEGAL_TYPE:
+            //printf("%d o\n",linenum1);
+            //fprintf(op,"%d o\n",linenum1);
+            break;
+        default:
+            break;
+    }
+    
+}
+/*--------------------获取单词-----------------------*/
+void getch1(){
+    if(indexofline == lenthofline){//行缓冲区指针指向最后一个字符就读
+        linenum++;
+        indexofline++ ;
+        //cout << indexInFile + 1 << endl ;
+        if(fgets(line,2048,ip)!=NULL){
+            lenthofline = strlen(line) ; //行长度
+            unsigned long i = lenthofline - 1 ; //数组下标所以减一
+            for( ; line[i] == ' ' || line[i] == '\t'||line[i]=='\r' ; i--){
+                line[i] = '\0' ;
+            }//切断没写完的
+            lenthofline = i + 1 ; //这一行的有效单词长度
+            indexofline = 0 ;  //本行读入完毕
+            ch = ' ' ;   //清空ch缓冲区
+        }
+        else
+            j=1;
+    }
+    else{
+        ch = line[indexofline] ;  //开始一个一个读取
+        indexofline++ ;
+        if(j==1)
+            ch='\0';
+    }
+}
+int indexa;
+/*-------------------词法分析------------------------*/
+void getsym(){
+    num=0;
+    int i =0 ;
+    for(i=0;i<=indexa;i++){
+        a[i]='\0';
+    }
+    indexa=0;
+    while(isspace(ch)){
+        getch1();
+    }
+    if(isletter()){
+        while(isletter()||isdigit(ch)){
+            a[indexa++]=ch;
+            getch1();
+            if(!isletter()&&!isdiv()&&!isdigit(ch)&&!isspace(ch)&&!isminu()&&!isplus()&&!ismult()&&!isnewline()&&!isr()&&!islss()&&!isgre()&&!iseql()&&!isneq()&&!issem()&&!islpa()&&!isrpa()&&!islbrace()&&!isrbrace()&&!isrbr()&&!islbr()&&!iscom()){
+                error(ILLEGALSYMBOL,linenum);
+                do{
+                    getch1();
+                }while(!iscom()&&!isspace(ch)&&!issem()&&(ch!='='));
+            }
+        }
+        a[indexa]='\0';
+        for(i=0; i<13; i++){
+            int b=0;
+            b=strcmp(stayword[i],a);
+            if(!strcmp(stayword[i],a)){
+                code1=i+1;
+                symId=code1;
+                break;
+            }
+        }
+        if(i==13){
+            symId=IDENFR;
+            
+        }
+    }
+    else if(isdigit(ch)){
+        int flag=ch=='0'?1:0;
+        while(isdigit(ch)){
+            a[indexa++]=ch;
+            num=num*10+(int)ch-'0';
+            getch1();
+        }
+        if(flag==1){
+            if(num!=0){
+                error(ILLEGALSYMBOL,linenum);
+            }
+        }
+        symId=INTCON;
+        a[indexa]='\0';
+    }
+    else if(ch=='\''){
+        char b[512];
+        int index=0;
+        getch1();
+        if(isdigit(ch)||isletter()||isdiv()||isplus()||isminu()||ismult()){
+            b[index++]=ch;
+            getch1();
+        }
+        else{
+            getch1();
+            error(ILLEGALSYMBOL,linenum);
+        }
+        b[index]='\0';
+        if(ch=='\''){
+            strcpy(a,b);
+            indexa=strlen(a);
+            getch1();
+            symId=CHARCON;
+        }
+        else{
+            error(ILLEGALSYMBOL,linenum);
+            return;
+        }
+    }
+    else if(ch=='\"'){
+        char b[512];
+        int index=0;
+        int costnum=0;
+        costnum=linenum+1;
+        getch1();
+        while(ch>=32&&ch<=126&&ch!=34){
+            b[index++]=ch;
+            getch1();
+            if((!isletter()&&!isdiv()&&!isdigit(ch)&&!isspace(ch)&&!isminu()&&!isplus()&&!ismult()&&!isnewline()&&!isr()&&!islss()&&!isgre()&&!iseql()&&!isneq()&&!issem()&&!islpa()&&!isrpa()&&!islbrace()&&!isrbrace()&&!isrbr()&&!islbr()&&!iscom()&&(ch!='\"')&&(ch!='\\'))&&((ch<32)||(ch>125))){
+                error(ILLEGALSYMBOL,linenum);
+                do{
+                    getch1();
+                }while(!iscom()&&!isspace(ch)&&!issem()&&(ch!='\"')&&!isrpa());
+                return;
+            }
+            if(linenum==costnum){
+               // error(ILLEGALSYMBOL,linenum-1);
+                //return;
+            }
+        }
+        b[index]='\0';
+        if(ch=='\"'){
+            strcpy(a,b);
+            indexa=strlen(a);
+            symId=STRCON;
+            getch1();
+        }
+        else{
+            error(ILLEGALSYMBOL,linenum);
+            symId=STRCON;
+            return;
+        }
+    }
+    else{
+        if(ch=='+'){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            symId=PLUS;
+            getch1();
+        }
+        else if(ch=='-'){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            symId=MINU;
+            getch1();
+        }
+        else if(ch=='*'){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            symId=MULT;
+            getch1();
+        }
+        else if(isdiv()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            /*if(cost){
+             fprintf(op,"DIV /\n");
+             printf("DIV /\n");}*/
+            symId=DIV;
+            getch1();
+        }
+        else if(islss()){//'<'
+            a[indexa++]=ch;
+            getch1();
+            if(iseql()){   //=
+                a[indexa++]=ch;
+                a[indexa]='\0';
+                getch1();
+                /*if(cost){
+                 fprintf(op,"LEQ <=\n");
+                 printf("LEQ <=\n");}*/
+                symId=LEQ;
+            }
+            else{
+                /*if(cost){
+                 fprintf(op,"LSS <\n");
+                 printf("LSS <\n");}*/
+                a[indexa]='\0';
+                symId=LSS;
+            }
+        }
+        else if(iseql()){
+            a[indexa++]=ch;
+            getch1();
+            if(iseql()){
+                /*if(cost){
+                 fprintf(op,"EQL ==\n");
+                 printf("EQL ==\n");}*/
+                a[indexa++]=ch;
+                a[indexa]='\0';
+                symId=EQL;
+                getch1();
+            }
+            else{
+                a[indexa]='\0';
+                /*if(cost){
+                 fprintf(op,"ASSIGN =\n");
+                 printf("ASSIGN =\n");}*/
+                symId=ASSIGN;
+            }
+        }
+        else if(isgre()){
+            a[indexa++]=ch;
+            getch1();
+            if(iseql()){
+                a[indexa++]=ch;
+                a[indexa]='\0';
+                /*if(cost){
+                 fprintf(op,"GEQ >=\n");
+                 printf("GEQ >=\n");}*/
+                symId=GEQ;
+                getch1();
+            }
+            else{
+                /*
+                 if(cost){
+                 fprintf(op,"GRE >\n");
+                 printf("GRE >\n");}*/
+                a[indexa]='\0';
+                symId=GRE;
+            }
+        }
+        else if(isneq()){
+            a[indexa++]=ch;
+            getch1();
+            if(iseql()){
+                a[indexa++]=ch;
+                a[indexa]='\0';
+                /*if(cost){
+                 fprintf(op,"NEQ !=\n");
+                 printf("NEQ !=\n");}*/
+                symId=NEQ;
+                getch1();
+            }
+            else{
+                error(ILLEGALSYMBOL,linenum);
+                getch1();
+            }
+        }
+        else if(issem()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"SEMICN ;\n");
+             printf("SEMICN ;\n");}*/
+            symId=SEMICN;
+        }
+        else if(iscom()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"COMMA ,\n");
+             printf("COMMA ,\n");}*/
+            symId=COMMA;
+        }
+        else if(islpa()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"LPARENT (\n");
+             printf("LPARENT (\n");}*/
+            symId=LPARENT;
+        }
+        else if(isrpa()){
+            a[indexa++]=')';
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"RPARENT )\n");
+             printf("RPARENT )\n");}*/
+            symId=RPARENT;
+        }
+        else if(islbr()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"LBRACK [\n");
+             printf("LBRACK [\n");}*/
+            symId=LBRACK;
+        }
+        else if(isrbr()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"RBRACK ]\n");
+             printf("RBRACK ]\n");}*/
+            symId=RBRACK;
+        }
+        else if(islbrace()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"LBRACE {\n");
+             printf("LBRACE {\n");}*/
+            symId=LBRACE;
+        }
+        else if(isrbrace()){
+            a[indexa++]=ch;
+            a[indexa]='\0';
+            getch1();
+            /*if(cost){
+             fprintf(op,"RBRACE }\n");
+             printf("RBRACE }\n");}*/
+            symId=RBRACE;
+        }
+        else{
+            //error(ILLEGALSYMBOL,linenum);
+            getch1();
+        }
+    }
+    //printf("%s %s\n",tkstay[symId-1],a);
+}
+void Factor(void);
+void ZX_Factor(void);
+int State(void);
+void states(void);
+void Returnfun(void);
+void Expresstion(void);
+void ZX_Expresstion(void);
+int returnSta(void);
+char returnname[100][100];
+char unreturnname[100][100];
+int returnfuns = 0;
+int unreturnfuns = 0;
+int EXP_type=0;
+int isVoid=0;
+/*--------------------·助记符·---------------------*/
+#define LDA 70 //将数值x压入栈顶  lod x
+#define PSN 71 //将地址x压入栈顶
+#define TKN 72 //存取数值
+#define STA 73  //
+#define ADD 74
+#define SUB 75
+#define MUT 76
+#define DIVV 17
+#define BIG 77  //>
+#define LES 78  ///<
+#define BOE 79  //>=
+#define LOE 80  ///<=
+#define EQLL 22  //==
+#define UEQ 82  //!=
+#define MIN 83  //变负
+#define LAB 84  //记录指令位置
+#define JMP 85  //无条件跳转 jmp x
+#define ZJP 86  //条件为0时跳转
+#define SCF 87  //输入 scf 0-int 1-char
+#define PRS 88  //输出字符串 prs x
+#define PRE 89  //输出表达式
+#define RTN 90  //有返回值返回（存栈顶）
+#define FED 91  //函数结束标识
+#define FUS 92  //函数调用标识
+#define JTM 93  //跳转至主函数开始位置
+#define ATO 94  // 取数组元素的值
+#define JAM 95
+#define DRS 96  //分配运行栈
+#define OPJ 97  //条件为1时跳转
+#define STK 98 // 数组值押入栈顶
+#define PRC 99
+#define SAV 100
+#define BAC 101
+/*--------------------·操作栈·---------------------*/
+typedef struct{
+    int num;
+    int type;
+}opstack;
+opstack op_stack[10000];
+opstack op_D_stack[100][10000];
+int exe_stack[10000];
+char string_stack[10000][1000];
+int P_OS=0;
+int P_D_OS=0;
+int run_stack[10000];
+int for_stack[10000];
+opstack para_stack[10000];
+int P_fs=0;
+int P_RS=0;
+// static_run_stack[10000];
+//int P_SRS=0;
+int main_flag=0;//main函数开始标记
+int global_flag=0;//全局变量声明标记
+int indexaddr=0;
+int while_begin=0;
+int while_end=0;
+int for_begin=0;
+int for_end=0;
+int for_mid=0;
+int for_start=0;
+int P_para=0;
+int level=-1;
+/*--------------------符号表-----------------------*/
+typedef struct {
+    char name[50];
+    int kind;//0-const 1-var 2-fun 3-para
+    int type; //0-void 1-int 2-char
+    int para;//函数参数个数或数组大小
+    int value;//常量的值 //若为函数类型 则0-void 1-int 2-char
+    int address; //标识符存储地址或地址偏移
+    int paratype[20];//分程序参数类型 //1-int 2-char
+    int DS; //动态栈存入标记
+}symbol;
+typedef struct {
+    symbol fuhao[2048];//符号表
+    int index; //栈顶指针
+    int funnum;//当前分程序总数
+    int funindex[2048];//分程序索引
+}symboltable;
+symboltable symbolTable;
+int base_addr=0;
+int tablecost=1;
+int address=0;
+int para;
+int type;
+int value;
+char idName[512]={'\0'};
+char tempName[512]={'\0'};
+int isreturn=0;
+int isReal=0;
+/*--------------------·PCODE·---------------------*/
+typedef struct{
+    int Code_name;
+    int i;
+    int a;
+    int DS;//存入动态栈标记
+}CODE;
+CODE code[1024]; //存储pcode
+int codeptr=0; //pcode代码位置指针
+int exe_codeprt=0;
+int SZ_addr=0;
+char sr;
+char enter;
+void interpret(){
+    int sym_addr=0;
+    int P_OS_=0;
+    int i;
+    while(exe_codeprt<codeptr){
+        switch (code[exe_codeprt].Code_name) {
+            case BAC:
+                i=0;
+                P_para-=code[exe_codeprt].i;
+                while(i<code[exe_codeprt].i){
+                    op_D_stack[P_D_OS][code[exe_codeprt].a+i+1]=para_stack[++P_para];
+                    i++;
+                     //printf("%d BAC %d\n",P_para,para_stack[P_para].num);
+                }
+                P_para-=code[exe_codeprt].i;
+                exe_codeprt++;
+                break;
+            case LDA:
+                P_OS++;
+                op_stack[P_OS].num=code[exe_codeprt].a;
+                op_stack[P_OS].type=code[exe_codeprt++].i;
+               // printf("%d LDA 栈顶<- %d\n",exe_codeprt-1,op_stack[code[exe_codeprt-1].a].num);
+                break;
+            case SAV:
+                para_stack[code[exe_codeprt].a]=op_D_stack[P_D_OS][code[exe_codeprt].a];
+                exe_codeprt++;
+                break;
+            case PSN:
+                sym_addr=symbolTable.fuhao[code[exe_codeprt].a].address;
+                P_OS++;
+                if(code[exe_codeprt++].DS==0){
+                    op_stack[P_OS]=op_stack[sym_addr];
+                }
+                else{
+                    op_stack[P_OS]=op_D_stack[P_D_OS][sym_addr];
+                }
+                //printf("%d PSN 栈顶<-%s<-%d 地址：%d\n",exe_codeprt-1,symbolTable.fuhao[code[exe_codeprt-1].a].name,op_stack[P_OS].num,code[exe_codeprt-1].a);
+                break;
+            case TKN:
+                sym_addr=symbolTable.fuhao[code[exe_codeprt].a].address;
+                if(code[exe_codeprt].DS==0){
+                    op_stack[sym_addr]=op_stack[P_OS];
+                   // printf("%d TKN0 %s <- %d 地址 ：= %d\n",exe_codeprt-1,symbolTable.fuhao[code[exe_codeprt-1].a].name,op_stack[P_OS].num,sym_addr);
+                }
+                else if(code[exe_codeprt].DS==2){
+                    para_stack[++P_para]=op_stack[P_OS];
+                    //printf("%d TKN %d\n",P_para,op_stack[P_OS].num);
+                }
+                else{
+                    op_D_stack[P_D_OS][sym_addr]=op_stack[P_OS];
+                    //printf("%d TKN1 %s <- %d 地址 ：= %d\n",exe_codeprt-1,symbolTable.fuhao[code[exe_codeprt-1].a].name
+                        //   ,op_stack[P_OS].num,code[exe_codeprt-1].a);
+                }
+                exe_codeprt++;
+                //printf("%d地址%d<-数字%d\n",exe_codeprt-1,code[exe_codeprt-1].a,op_stack[P_OS]);
+                P_OS--;
+                break;
+            case PRE:
+                if(op_stack[P_OS].type!=2)
+                    printf("%d\n",op_stack[P_OS].num);
+                else if(op_stack[P_OS].type==2)
+                    printf("%c\n",op_stack[P_OS].num);
+                P_OS--;
+                exe_codeprt++;
+                break;
+            case FUS:
+                run_stack[P_RS++]=code[exe_codeprt].a;
+                for_stack[P_fs++]=P_OS;
+                exe_codeprt++;
+                P_D_OS++;
+                break;
+            case FED:
+                P_RS--;
+                exe_codeprt=run_stack[P_RS];
+                P_OS_=for_stack[--P_fs];
+                P_OS_++;
+                op_stack[P_OS_]=op_stack[P_OS];
+                P_OS=P_OS_;
+                P_D_OS--;
+                break;
+            case ZJP:
+                if(op_stack[P_OS].num==0){
+                    exe_codeprt=code[exe_codeprt].a;
+                    break;
+                }
+                else
+                    exe_codeprt++;
+                break;
+            case JMP:
+                exe_codeprt=code[exe_codeprt].a;
+                break;
+            case ADD:
+                P_OS--;
+                op_stack[P_OS].num=op_stack[P_OS].num+op_stack[P_OS+1].num;
+                op_stack[P_OS].type=1;
+                //printf("%d ADD : %d + %d \n",exe_codeprt,op_stack[P_OS].num,op_stack[P_OS+1].num);
+                exe_codeprt++;
+                break;
+            case SUB:
+                P_OS--;
+                op_stack[P_OS].num=op_stack[P_OS].num-op_stack[P_OS+1].num;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case MUT:
+                P_OS--;
+                op_stack[P_OS].num=op_stack[P_OS].num*op_stack[P_OS+1].num;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case DIVV:
+                P_OS--;
+                op_stack[P_OS].num=op_stack[P_OS].num/op_stack[P_OS+1].num;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case BIG:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num>op_stack[P_OS+1].num)?1:0;
+                exe_codeprt++;
+                break;
+            case LES:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num<op_stack[P_OS+1].num)?1:0;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case BOE:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num>=op_stack[P_OS+1].num)?1:0;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case LOE:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num<=op_stack[P_OS+1].num)?1:0;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case EQLL:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num==op_stack[P_OS+1].num)?1:0;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case UEQ:
+                P_OS--;
+                op_stack[P_OS].num=(op_stack[P_OS].num!=op_stack[P_OS+1].num)?1:0;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case MIN:
+                op_stack[P_OS].num=0-op_stack[P_OS].num;
+                op_stack[P_OS].type=1;
+                exe_codeprt++;
+                break;
+            case PRS:
+                printf("%s\n",string_stack[exe_codeprt++]);
+                break;
+            case LAB:
+                P_OS++;
+                op_stack[P_OS].num=code[exe_codeprt++].a;
+                break;
+            case OPJ:
+                if(op_stack[P_OS].num==1){
+                    exe_codeprt=code[exe_codeprt].a;
+                }
+                else
+                    exe_codeprt++;
+                break;
+            case STA:  //存
+                SZ_addr=op_stack[P_OS-1].num;
+                if(code[exe_codeprt].DS==0)
+                    op_stack[SZ_addr]=op_stack[P_OS];
+                else{
+                    op_D_stack[P_D_OS][SZ_addr]=op_stack[P_OS];
+                    //printf("STA1: %d \n",op_D_stack[P_D_OS][SZ_addr].num);
+                }
+                P_OS--;
+                exe_codeprt++;
+                break;
+            case STK:  //取
+                SZ_addr=op_stack[P_OS].num;
+                if(code[exe_codeprt].DS==0){
+                    op_stack[P_OS]=op_stack[SZ_addr];
+                    //printf("STK0 %d \n",op_D_stack[P_D_OS][SZ_addr].num);
+                }
+                else{
+                    op_stack[P_OS]=op_D_stack[P_D_OS][SZ_addr];
+                    //printf("STK1 %d \n",op_D_stack[P_D_OS][SZ_addr].num);
+                }
+                //printf("%d stk: %d\n",exe_codeprt,op_stack[SZ_addr].num);
+                exe_codeprt++;
+                break;
+            case SCF:
+                sym_addr=symbolTable.fuhao[code[exe_codeprt].a].address;
+                if(code[exe_codeprt].i==1){
+                    if(code[exe_codeprt++].DS==0){
+                        scanf("%d",&op_stack[sym_addr].num);
+                        scanf("%c",&enter);
+                        op_stack[sym_addr].type=1;
+                        //printf("%d 读入 %s <- 数字%d\n",exe_codeprt-1,symbolTable.fuhao[code[exe_codeprt-1].a].name,op_stack[sym_addr].num);
+                    }
+                    else{
+                        scanf("%d",&op_D_stack[P_D_OS][sym_addr].num);
+                        scanf("%c",&enter);
+                        op_D_stack[P_D_OS][sym_addr].type=1;
+                        //printf("%d 读入 %d地址 <- 数字%d\n",exe_codeprt-1, sym_addr,op_D_stack[P_D_OS][sym_addr].num);
+                    }
+                }
+                else if(code[exe_codeprt].i==2){
+                    scanf("%c",&sr);
+                    scanf("%c",&enter);
+                    if(code[exe_codeprt++].DS==0){
+                        op_stack[sym_addr].num=sr;
+                        op_stack[sym_addr].type=2;  }
+                    else{
+                        op_D_stack[P_D_OS][sym_addr].num=sr;
+                        op_D_stack[P_D_OS][sym_addr].type=2;
+                    }
+                }
+                break;
+            case PRC:
+                printf("%s",string_stack[exe_codeprt]);
+                if(op_stack[P_OS].type!=2)
+                    printf("%d\n",op_stack[P_OS].num);
+                else if(op_stack[P_OS].type==2)
+                    printf("%c\n",op_stack[P_OS].num);
+                P_OS--;
+                exe_codeprt++;
+                break;
+            default:
+                break;
+        }
+    }
+}
+/*----------------------------*/
+int code_address=0;
+//入符号表
+void pushsymTable(char *name,int type,int para,int value,int kind,int address){
+    int i =0;
+    if(kind==2){
+        for(i=0;i<symbolTable.funnum;i++){
+            //名字重定义
+            if(!strcmp(name,symbolTable.fuhao[symbolTable.funindex[i]].name)){
+                error(REDEFINENAME,linenum);
+                return;
+            }
+        }
+        if(i>=symbolTable.funnum){
+            symbolTable.funindex[symbolTable.funnum++]=symbolTable.index;
+            exe_stack[address]=codeptr;
+        }
+    }
+    else{
+        int i = symbolTable.funindex[symbolTable.funnum-1] ;// 查找同层是否有重名
+        for( ; i < symbolTable.index ; i++){
+            if(strcmp(symbolTable.fuhao[i].name, name) == 0){
+                error(REDEFINENAME,linenum);
+                return ;
+            }
+        }
+    }
+    strcpy(symbolTable.fuhao[symbolTable.index].name,name);
+    symbolTable.fuhao[symbolTable.index].type=type;
+    symbolTable.fuhao[symbolTable.index].para=para;
+    symbolTable.fuhao[symbolTable.index].value=value;
+    symbolTable.fuhao[symbolTable.index].kind=kind;
+    symbolTable.fuhao[symbolTable.index].address=address;
+    if(main_flag==0&&global_flag!=0){
+        symbolTable.fuhao[symbolTable.index].DS=1;
+    }
+    else{
+        symbolTable.fuhao[symbolTable.index].DS=0;
+        op_stack[address].type=type;
+    }
+    symbolTable.index++;
+}
+void insertpara(int para){
+    int i;
+    i=symbolTable.funindex[symbolTable.funnum-1];
+    symbolTable.fuhao[i].para=para;
+}
+void inserttype(int type,int num){
+    int i;
+    i=symbolTable.funindex[symbolTable.funnum-1];
+    symbolTable.fuhao[i].paratype[num]=type;
+}
+int isArr;
+int factorType;
+int isconst=0;
+int t;
+int search_para_type(char*name,int type,int num){
+    int i;
+    for(i = 0 ; i < symbolTable.funnum ; i++){
+        if(strcmp(symbolTable.fuhao[symbolTable.funindex[i]].name, name) == 0){
+            break ;
+        }
+    }
+    if(i >= symbolTable.funnum){//use undefined identifier
+        //cout << name << ": undefined function !" << endl ;
+        return 0 ;
+    }
+    if(symbolTable.fuhao[symbolTable.funindex[i]].para<num){
+        return 0;
+    }
+    if(symbolTable.fuhao[symbolTable.funindex[i]].paratype[num] != type){//checked paramenter
+        error(HSCSTYPEBPP,linenum) ;
+        return -1 ;
+    }
+    return 0;
+}
+int searchSymTab(char* name, int flag){ //when use a id or a function name ,we should ensure if it is leaga
+    isconst=0;
+    if(flag == 1){//search function name
+        int i ;
+        for(i = 0 ; i < symbolTable.funnum ; i++){
+            if(strcmp(symbolTable.fuhao[symbolTable.funindex[i]].name, name) == 0){
+                break ;
+            }
+        }
+        if(i >= symbolTable.funnum){//use undefined identifier
+            //cout << name << ": undefined function !" << endl ;
+            error(UNDEFINENAME,linenum);
+            return 0 ;
+        }
+        if(symbolTable.fuhao[symbolTable.funindex[i]].para != para){//checked paramenter
+            error(HSCSNUMBERBPP,linenum) ;
+            return symbolTable.fuhao[symbolTable.funindex[i]].type ;
+        }
+        /*if(symbolTable.fuhao[symbolTable.funindex[i]].type!=type){
+            //error(HSCSTYPEBPP,linenum);
+            return symbolTable.fuhao[symbolTable.funindex[i]].type;
+        }*/
+        //return symTable.element[symTable.indexOfPre[i]].address ;
+        //return 1 ;
+        return symbolTable.fuhao[symbolTable.funindex[i]].type;
+    }
+    else{//search id
+        int i ;
+        for(i = symbolTable.funindex[symbolTable.funnum-1]; i < symbolTable.index ; i++ ){
+            if(strcmp(symbolTable.fuhao[i].name, name) == 0){
+                break ;
+            }
+        }//在本层查找变量名
+        if(i == symbolTable.index){//本层查不到 去全局变量查找
+            i = 0 ;
+            int n = symbolTable.funindex[0] ;//end index of main symbolTable
+            for( ; i < n ; i++){
+                if(strcmp(symbolTable.fuhao[i].name, name) == 0){
+                    break ;
+                }
+            }
+            if(i == n){
+                error(UNDEFINENAME, linenum);
+                return 0 ;
+            }
+            if(symbolTable.fuhao[i].kind == 1){  //var
+                factorType = symbolTable.fuhao[i].value ;
+                if(symbolTable.fuhao[i].para != -1){
+                    //isArr = 1 ;
+                }
+                return symbolTable.fuhao[i].type ;
+            }
+            if(symbolTable.fuhao[i].kind == 0){//const
+                //error(CHANGE_CONST,linenum);
+                isconst = 1 ;
+                return symbolTable.fuhao[i].type ;
+            }
+            if(symbolTable.fuhao[i].kind == 3){//paramenter
+                
+                return symbolTable.fuhao[i].type ;
+            }
+        }
+        else{  //本层找到
+            if(symbolTable.fuhao[i].kind == 1){
+                factorType = symbolTable.fuhao[i].value ;
+                if(symbolTable.fuhao[i].para != -1){
+                    //isArr = 1 ;
+                }
+                return symbolTable.fuhao[i].type ;
+            }
+            if(symbolTable.fuhao[i].kind == 0){//const
+                isconst = 1 ;
+                return symbolTable.fuhao[i].type ;
+            }
+            if(symbolTable.fuhao[i].kind == 3){//paramenter
+                return symbolTable.fuhao[i].type ;
+            }
+        }
+        return 1 ;
+    }
+    
+}
+int searchSymTab_addr(char* name, int flag){ //when use a id or a function name ,we should ensure if it is leaga
+    isconst=0;
+    if(flag == 1){//search function name
+        int i ;
+        for(i = 0 ; i < symbolTable.funnum ; i++){
+            if(strcmp(symbolTable.fuhao[symbolTable.funindex[i]].name, name) == 0){
+                break ;
+            }
+        }
+        if(i >= symbolTable.funnum){//use undefined identifier
+            //cout << name << ": undefined function !" << endl ;
+            error(UNDEFINENAME,linenum);
+            return 0 ;
+        }
+        if(symbolTable.fuhao[symbolTable.funindex[i]].para != para){//checked paramenter
+            //error(HSCSNUMBERBPP,linenum) ;
+            return symbolTable.funindex[i];
+        }
+        return symbolTable.funindex[i];
+    }
+    else{//search id
+        int i ;
+        for(i = symbolTable.funindex[symbolTable.funnum-1]; i < symbolTable.index ; i++ ){
+            if(strcmp(symbolTable.fuhao[i].name, name) == 0){
+                break ;
+            }
+        }//在本层查找变量名
+        if(i == symbolTable.index){//本层查不到 去全局变量查找
+            int i = 0 ;
+            int n = symbolTable.funindex[0] ;//end index of main symbolTable
+            for( ; i < n ; i++){
+                if(strcmp(symbolTable.fuhao[i].name, name) == 0){
+                    break ;
+                }
+            }
+            if(i == n){
+                error(UNDEFINENAME, linenum);
+                return 0 ;
+            }
+            else{
+                if(symbolTable.fuhao[i].kind==0)
+                    return i;
+                else
+                    return i;
+            }
+        }
+        else{  //本层找到
+            if(symbolTable.fuhao[i].kind==0)
+                return i;
+            else
+                return i;
+        }
+        return 1 ;
+    }
+    
+}
+/*-------------------语法分析--------------------------*/
+//＜无符号整数＞  ::= ＜非零数字＞｛＜数字＞｝| 0
+int UnsignedInt(){
+    if(symId==INTCON){
+        return 1;
+    }
+    else
+        return 0;
+    //出错处理
+}
+//＜整数＞        ::= ［＋｜－］＜无符号整数＞
+int judege_minu=0;
+int Intcon(){
+    judege_minu=0;
+    if(symId==PLUS||symId==MINU){
+        //printf("%s %s\n",tkstay[symId-1],a);
+        //fprintf(op,"%s %s\n",tkstay[symId-1],a);
+        if(symId==MINU){
+            judege_minu=1;
+        }
+        getsym();
+        if(UnsignedInt()){
+            return 1;
+        }
+        else
+            return 0;
+    }
+    else if(UnsignedInt()){
+        return 1;
+    }
+    else
+        return 0;
+    
+}
+//＜常量定义＞   ::=   int＜标识符＞＝＜整数＞{,＜标识符＞＝＜整数＞}
+//  | char＜标识符＞＝＜字符＞{,＜标识符＞＝＜字符＞}
+void constdef(int type){
+    getsym() ;
+    if(symId == IDENFR){
+        strcpy(idName,a);
+        getsym() ;
+        if(symId == ASSIGN){
+            getsym() ;
+            if(type==CHARTK&&symId==CHARCON){
+                address++;
+                para=-1;
+                pushsymTable(idName,2, para,a[0],0,address);
+            }
+            else if(type == INTTK && (symId == INTCON||symId==PLUS ||symId == MINU) ){
+                int cost=0;
+                if(symId==PLUS||symId==INTCON){
+                    cost=-1;
+                }
+                else if(symId==MINU){
+                    cost=-2;
+                }
+                address++;
+                para=-1;
+                Intcon();
+                if(cost==-1){
+                    value=num;
+                }
+                else if(cost==-2){
+                    value=0-num;
+                }
+                pushsymTable(idName,1,para,value,0,address);
+            }
+            else if(symId!=SEMICN){
+                error(CONST_ILLEGAL_TYPE,linenum);
+                return;
+            }
+        }
+    }
+}// 先识别 int/char 之后有,继续 不是,就停止 输出常量定义
+//＜常量说明＞ ::=  const＜常量定义＞;{ const＜常量定义＞;}
+void constDeclaration(){  //常量说明
+    //getsym() ;
+    if(symId != CONSTTK){
+        return ;
+    }
+    getsym() ;
+    int type ;
+    type=symId;
+    do{
+        if(symId==COMMA){
+        }
+        constdef(type);
+        getsym();
+        if(symId==SEMICN){
+        }
+    }while(symId == COMMA) ;
+    if(symId == SEMICN){
+        getsym() ;
+        if(symId == CONSTTK){
+            constDeclaration() ;
+        }
+        else{
+        }
+    }
+    else{
+        error(LACK_FENHAO,linenum);
+        
+        return;
+    }
+}
+//＜类型标识符＞      ::=  int | char
+int typeId(){
+    if(symId==INTTK||symId==CHARTK){
+        return 1;
+    }
+    else
+        return 0;
+}
+//＜变量定义＞  ::= ＜类型标识符＞(＜标识符＞|＜标识符＞'['＜无符号整数＞']'){,(＜标识符＞|＜标识符＞'['＜无符号整数＞']' )}
+int tempType ;
+int varDef(){
+    if(symId == INTTK || symId == CHARTK){
+        tempType = symId ;
+        do{
+            para=0;
+            unsigned long cost = indexofline;
+            char chh;
+            char a1[512]={'\0'};
+            char a2[512]={'\0'};
+            int symmId;
+            int symId1=0;
+            int symId2=0;
+            int try=0;
+            symmId=symId;
+            chh=ch;
+            symId1=symId;
+            strcpy(a1,a);
+            getsym() ;
+            if(symId == IDENFR){
+                strcpy(idName,a);
+                symId2=symId;
+                strcpy(a2,a);
+                getsym() ;
+                if(symId == LBRACK){//array
+                    value=tempType;
+                    getsym();
+                    if(symId != INTCON){
+                        error(SZXIABIAO_UNINT,linenum) ;
+                        //read next ; skip read
+                        do{
+                            getsym() ;
+                        }while(symId != SEMICN) ;
+                        return 1;
+                    }
+                    UnsignedInt();
+                    para=num;
+                    getsym() ;
+                    if(symId==RBRACK){ //数组
+                        value=tempType;
+                        
+                        if(tempType==INTTK){
+                            pushsymTable(idName,1, para, value,1,address+1);
+                            for(;try<=para;try++){
+                                op_stack[address+1+try].type=1;
+                            }
+                        }
+                        
+                        else if(tempType==CHARTK){
+                            pushsymTable(idName,2, para, value,1,address+1);
+                            for(try=0;try<=para;try++){
+                                op_stack[address+1+try].type=2;
+                            }
+                        }
+                        address+=para;
+                    }
+                    else{
+                        error(LACK_YOUZHONGKUOH,linenum);
+                        do{
+                            getsym() ;
+                        }while(symId != SEMICN) ;
+                        return 1;
+                    }
+                    getsym() ;
+                }
+                else if(symId==LPARENT){
+                    indexofline=cost;
+                    ch=chh;
+                    symId=symmId;
+                    strcpy(a,a1);
+                    return 2;
+                }
+                else{
+                    para=-1;
+                    address++;
+                    if(tempType==INTTK)
+                        pushsymTable(idName,1, para, value,1,address);
+                    else if(tempType==CHARTK)
+                        pushsymTable(idName,2, para, value,1,address);
+                }
+            }
+            else {
+                error(ILLEGALSYMBOL,linenum);
+                if(symId!=SEMICN&&symId!=INTTK&&symmId!=CHARTK&&symmId!=VOIDTK)
+                do{
+                    getsym();
+                }while(symId!=SEMICN&&symId!=INTTK&&symmId!=CHARTK&&symmId!=VOIDTK);
+                return 2;}
+        }while(symId == COMMA) ;
+        return 1;
+        //getsym() ;
+    }
+    else return 1;
+}
+//＜变量说明＞  ::= ＜变量定义＞;{＜变量定义＞;}
+int varDeclaration(){
+    int i =1;
+    int k= 0;
+    do{
+        i=varDef();
+        if(symId != SEMICN){
+            if(i!=2){
+                error(LACK_FENHAO,linenum);
+                do{
+                    getsym() ;
+                }while(symId != INTTK && symId != CHARTK && symId != VOIDTK) ;
+                return 1;
+            }
+            else
+                return 1;
+        }
+        k=1;
+        getsym() ;
+    }
+    while(symId == INTTK || symId == CHARTK) ;
+    return 1;
+}
+
+//＜乘法运算符＞  ::= *｜/
+int multiop(){
+    if(symId==MULT||symId==DIV){
+        return 1;
+    }
+    else
+        return 0;
+}
+//＜项＞     ::= ＜因子＞{＜乘法运算符＞＜因子＞}
+void item(){
+    int op=0;
+    Factor();
+    do{
+        if(symId == MULT || symId == DIV){
+            if(symId==MULT)
+                op=MULT;
+            else
+                op=DIV;
+            getsym();
+            Factor();
+            if(op==MULT){
+                code[codeptr++].Code_name=MUT;
+            }
+            else if(op==DIV){
+                code[codeptr++].Code_name=DIVV;
+            }
+        }
+    }while(symId == MULT || symId == DIV) ;
+}
+//＜项＞     ::= ＜因子＞{＜乘法运算符＞＜因子＞}
+void ZX_item(){
+    ZX_Factor();
+    do{
+        if(symId == MULT || symId == DIV){
+            getsym();
+            ZX_Factor();
+        }
+    }while(symId == MULT || symId == DIV) ;
+}
+
+//＜因子＞    ::= ＜标识符＞｜＜标识符＞'['＜表达式＞']'|'('＜表达式＞')'｜＜整数＞|＜字符＞｜＜有返回值函数调用语句＞
+void Factor(){
+    if(symId == IDENFR){
+        strcpy(idName,a) ;
+        if(returnSta()){
+            //t = searchSymTab(idName, 1) ;
+            EXP_type=t;
+        }
+        else{
+            getsym() ;
+            if(symId == LPARENT){//function call
+                getsym() ;
+                //valueOfPara() ;
+                if(symId != RPARENT){
+                    error(LACK_YOUXIAOKUOH,linenum);
+                    do{
+                        getsym() ;
+                    }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT && symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    return ;
+                }
+                t = searchSymTab(idName, 1) ;
+                getsym() ;
+            }
+            else if(symId == LBRACK){ //array
+                int t1;
+                t = searchSymTab(idName, 0) ;
+                EXP_type=t;
+                indexaddr=searchSymTab_addr(idName,0);
+                code[codeptr].Code_name=LDA;
+                code[codeptr].a=symbolTable.fuhao[indexaddr].address;
+                code[codeptr].i=t;
+                for_stack[P_fs++]=indexaddr;
+                t1=t;
+                codeptr++;
+                isArr=1;
+                getsym() ;
+                Expresstion();
+                if(symId != RBRACK){
+                    error(LACK_YOUZHONGKUOH,linenum);
+                    do{
+                        getsym() ;
+                    }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT && symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    return ;
+                }
+                t=t1;
+                code[codeptr++].Code_name=ADD;
+                code[codeptr].i=t;
+                indexaddr=for_stack[--P_fs];
+                indexaddr=symbolTable.fuhao[indexaddr].DS;
+                code[codeptr].DS=indexaddr;
+                code[codeptr++].Code_name=STK;
+                getsym() ;
+                isArr=0;
+            }
+            else{//identifier, is variable
+                t = searchSymTab(idName, 0) ;
+                if(isconst){ //const
+                    code[codeptr].Code_name=LDA;
+                    indexaddr=searchSymTab_addr(idName,0);
+                    code[codeptr].a=symbolTable.fuhao[indexaddr].value;  //value
+                    code[codeptr].i=t;
+                    codeptr++;
+                }
+                else {  //var
+                    code[codeptr].Code_name=PSN;
+                    indexaddr=searchSymTab_addr(idName,0);
+                    code[codeptr].a=indexaddr;
+                    code[codeptr].i=t;
+                    code[codeptr].DS=symbolTable.fuhao[indexaddr].DS;
+                    codeptr++;
+                }
+                EXP_type=t;
+            }
+        }
+    }//‘（’’表达式'）'
+    else if(symId == LPARENT){
+        isReal=1;
+            getsym() ;
+            EXP_type=0;
+            Expresstion();
+            if(symId != RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym() ;
+                }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                       symId != MINU && symId != MULT && symId != DIV &&
+                       symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                       symId != LSS && symId != LEQ && symId != NEQ  &&
+                       symId != EQL && symId != NEQ );
+                return ;
+            }
+                getsym();
+        }
+    else if(symId == INTCON || symId == PLUS || symId == MINU){
+        Intcon();
+        code[codeptr].Code_name=LDA;
+        code[codeptr].i=1;
+        code[codeptr++].a=num;
+        if(judege_minu==1){
+            code[codeptr++].Code_name=MIN;
+        }
+        getsym();
+        EXP_type=1;
+    }
+    else if(symId == CHARCON){
+        if(isReal==1){
+            code[codeptr].Code_name=LDA;
+            code[codeptr].i=1;
+            code[codeptr++].a=a[0];
+            EXP_type=1;
+            isReal=0;
+        }
+        else{
+            code[codeptr].Code_name=LDA;
+            code[codeptr].i=2;
+            code[codeptr++].a=a[0];
+            EXP_type=2;
+        }
+        getsym();
+    }
+    else{
+        return ;
+    }
+}
+//＜因子＞    ::= 整型＜标识符＞｜整型＜标识符＞'['整型＜表达式＞']'|'('＜表达式＞')'｜＜整数＞|＜字符＞｜＜有返回值函数调用语句＞
+int returntype=0;
+void ZX_Factor(){
+    if(symId == IDENFR){
+        strcpy(idName,a) ;
+        if(returnSta()){
+            returntype=t; //返回函数类型
+            if(t==2){ //char型函数 报错
+                if(!isArr){
+                    error(CONDITION_ILLEGAL_TYPE, linenum);
+                    if(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                       symId != MINU && symId != MULT && symId != DIV &&
+                       symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                       symId != LSS && symId != LEQ && symId != NEQ  &&
+                       symId != EQL && symId != NEQ){
+                        do{
+                            getsym() ;
+                        }while(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                               symId != MINU && symId != MULT && symId != DIV &&
+                               symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                               symId != LSS && symId != LEQ && symId != NEQ  &&
+                               symId != EQL && symId != NEQ );
+                        return ;}
+                }
+                else if(isArr){
+                    error(SZXIABIAO_UNINT, linenum);
+                    do{
+                        getsym() ;
+                    }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    isArr=0;
+                    return ;
+                }
+            }
+        }
+        else{//检查标识符
+            t=searchSymTab(idName,0);
+            if(t==2){
+                if(!isArr){
+                    error(CONDITION_ILLEGAL_TYPE, linenum);
+                    if(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                       symId != MINU && symId != MULT && symId != DIV &&
+                       symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                       symId != LSS && symId != LEQ && symId != NEQ  &&
+                       symId != EQL && symId != NEQ){
+                        do{
+                            getsym() ;
+                        }while(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                               symId != MINU && symId != MULT && symId != DIV &&
+                               symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                               symId != LSS && symId != LEQ && symId != NEQ  &&
+                               symId != EQL && symId != NEQ );
+                        return ;}
+                }
+                else if(isArr){
+                    error(SZXIABIAO_UNINT, linenum);
+                    do{
+                        getsym() ;
+                    }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    isArr=0;
+                    return ;
+                }
+            }
+            getsym() ;
+            if(symId == LPARENT){//function call
+                error(CONDITION_ILLEGAL_TYPE,linenum);
+                if(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                   symId != MINU && symId != MULT && symId != DIV &&
+                   symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                   symId != LSS && symId != LEQ && symId != NEQ  &&
+                   symId != EQL && symId != NEQ){
+                    do{
+                        getsym() ;
+                    }while(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    return ;}
+                
+            }
+            else if(symId == LBRACK){ //array
+                isArr=1;
+                getsym() ;
+                ZX_Expresstion();
+                if(symId != RBRACK){
+                    error(LACK_YOUZHONGKUOH,linenum);
+                    do{
+                        getsym() ;
+                    }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT && symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    return ;
+                }
+                t = searchSymTab(idName, 0) ;
+                getsym() ;
+                isArr=0;
+            }
+            else{//identifier, is variable
+                t = searchSymTab(idName, 0) ;
+            }
+        }
+    }//‘（’’表达式'）'
+    else if(symId == LPARENT){
+        getsym() ;
+        if(symId==CHARCON){
+            getsym();
+            if(symId==PLUS||symId==MINU){
+                ZX_Expresstion();
+            }
+            else if(symId==MULT||symId==DIV){
+                ZX_item();
+            }
+            /*elseif(symId != RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym() ;
+                }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                       symId != MINU && symId != MULT && symId != DIV &&
+                       symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                       symId != LSS && symId != LEQ && symId != NEQ  &&
+                       symId != EQL && symId != NEQ );
+                return ;
+            }*/
+        }
+        else{
+            ZX_Expresstion();
+        }
+        if(symId != RPARENT){
+            error(LACK_YOUXIAOKUOH,linenum);
+            do{
+                getsym() ;
+            }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                   symId != MINU && symId != MULT && symId != DIV &&
+                   symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                   symId != LSS && symId != LEQ && symId != NEQ  &&
+                   symId != EQL && symId != NEQ );
+            return ;
+        }
+        getsym();
+    }
+    else if(symId == INTCON || symId == PLUS || symId == MINU){
+        Intcon();
+        code[codeptr].Code_name=LDA;
+        code[codeptr++].a=num;
+        getsym();
+    }
+    else if(symId == CHARCON){
+        if(!isArr){
+            getsym();
+            if(symId==PLUS||symId==MULT||symId==MINU||symId==DIV){
+                getsym();
+                ZX_Expresstion();
+            }
+            else{error(CONDITION_ILLEGAL_TYPE, linenum);
+                if(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                   symId != MINU && symId != MULT && symId != DIV &&
+                   symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                   symId != LSS && symId != LEQ && symId != NEQ  &&
+                   symId != EQL && symId != NEQ){
+                    do{
+                        getsym() ;
+                    }while(symId!=RPARENT&&symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                           symId != MINU && symId != MULT && symId != DIV &&
+                           symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                           symId != LSS && symId != LEQ && symId != NEQ  &&
+                           symId != EQL && symId != NEQ );
+                    return ;}}
+        }
+        else if(isArr){
+            error(SZXIABIAO_UNINT, linenum);
+            do{
+                getsym() ;
+            }while(symId != SEMICN && symId != ASSIGN && symId != PLUS &&
+                   symId != MINU && symId != MULT && symId != DIV &&
+                   symId != RPARENT &&symId!=RBRACK&& symId != COMMA && symId != GRE &&
+                   symId != LSS && symId != LEQ && symId != NEQ  &&
+                   symId != EQL && symId != NEQ );
+            isArr=0;
+            return ;
+        }
+    }
+    else{
+        return;
+    }
+    
+}
+
+//＜步长＞::= ＜无符号整数＞
+void stepLen(){
+    if(UnsignedInt()){
+        code[codeptr].Code_name=LDA;
+        code[codeptr].i=1;
+        code[codeptr++].a=num;
+    }
+}
+
+//＜表达式＞    ::= ［＋｜－］＜项＞{＜加法运算符＞＜项＞}   //[+|-]只作用于第一个<项>
+void Expresstion(){
+    int op1=0;
+    int op2=0;
+    if(symId == PLUS || symId == MINU){
+        if(symId==MINU)
+            op2=MINU;
+        getsym();
+        item();
+        if(op2==MINU)
+            code[codeptr++].Code_name=MIN;
+        do{
+            if(symId == PLUS || symId == MINU){
+                if(symId==PLUS)
+                    op1=ADD;
+                else
+                    op1=SUB;
+                getsym();
+                item();
+                if(op1==ADD){
+                    code[codeptr].Code_name=ADD;
+                    code[codeptr++].i=1;
+                }
+                else if(op1==SUB){
+                    code[codeptr].Code_name=SUB;
+                    code[codeptr++].i=1;
+                }
+            }
+        }while(symId == PLUS || symId == MINU) ;
+        //_gramma << "it is a expr" << endl ;
+        //cout << "it is a expr" << endl ;
+    }
+    else{
+        item() ;
+        do{
+            if(symId == PLUS || symId == MINU){
+                if(symId==PLUS)
+                    op1=ADD;
+                else
+                    op1=SUB;
+                getsym();
+                item();
+                if(op1==ADD){
+                    code[codeptr].Code_name=ADD;
+                    code[codeptr++].i=1;
+                }
+                else if(op1==SUB){
+                    code[codeptr].Code_name=SUB;
+                    code[codeptr++].i=1;
+                }
+            }
+        }while(symId == PLUS || symId == MINU) ;
+        //_gramma << "it is a expr" << endl ;
+        //cout << "it is a expr" << endl ;
+    }
+}
+//＜表达式＞    ::= ［＋｜－］＜项＞{＜加法运算符＞＜项＞}   //[+|-]只作用于第一个<项>
+void ZX_Expresstion(){
+    if(symId == PLUS || symId == MINU){
+        getsym();
+        ZX_item();
+        do{
+            if(symId == PLUS || symId == MINU){
+                getsym();
+                ZX_item();
+            }
+        }while(symId == PLUS || symId == MINU) ;
+        //_gramma << "it is a expr" << endl ;
+        //cout << "it is a expr" << endl ;
+    }
+    else{
+        ZX_item() ;
+        do{
+            if(symId == PLUS || symId == MINU){
+                getsym();
+                ZX_item();
+            }
+        }while(symId == PLUS || symId == MINU) ;
+        //_gramma << "it is a expr" << endl ;
+        //cout << "it is a expr" << endl ;
+    }
+}
+//＜声明头部＞   ::=  int＜标识符＞ |char＜标识符＞
+int declHead(){
+    if(symId==INTTK){
+        getsym();
+        if(symId==IDENFR){
+            strcpy(idName, a);
+            value=1;
+            para=0;
+            //address=0;
+            address++;
+            type=1;
+            pushsymTable(idName,1,para,value,2,address);
+            strcpy(returnname[returnfuns++],a);
+            return 1;
+        }
+        else return 0;
+    }
+    else if (symId==CHARTK){
+        getsym();
+        if(symId==IDENFR){
+            strcpy(idName, a);
+            value=2;
+            para=0;
+            //address=0;
+            address++;
+            type=2;
+            pushsymTable(idName,2,para,value,2,address);
+            strcpy(returnname[returnfuns++],a);
+            return 1;}
+        else
+            return 0;
+    }
+    else
+        return 0;
+}
+//＜参数表＞    ::=  ＜类型标识符＞＜标识符＞{,＜类型标识符＞＜标识符＞}| ＜空＞
+void paraList(){
+    para=0;
+    int num=0;
+    int address1=0;
+    int P_pa=1;
+    address1=address;
+    do{
+        if(symId == COMMA){
+            getsym() ;
+        }
+        if(symId == INTTK || symId == CHARTK){
+            tempType=symId;
+            getsym() ;
+            strcpy(idName,a);
+            address++;
+            value=-1;
+            if(tempType==INTTK){
+                pushsymTable(idName,1,para+1,value,3,address);
+                inserttype(1,num++);
+            }
+            else if(tempType==CHARTK){
+                pushsymTable(idName,2,para+1,value,3,address);
+                inserttype(2,num++);
+            }
+            if(symId != IDENFR){
+                return ;
+            }
+            para++;
+            getsym() ;
+        }
+        
+    }while(symId == COMMA) ;
+    code[codeptr].Code_name=BAC;
+    code[codeptr].a=address1;
+    code[codeptr++].i=para;
+    insertpara(para);
+}
+//＜值参数表＞   ::= ＜表达式＞{,＜表达式＞}｜＜空＞
+void valuelist(int k){
+    para=0;
+    do{
+        if(symId == COMMA){
+            getsym() ;
+        }
+        if(symId == PLUS || symId == MINU || symId == IDENFR ||
+           symId == INTCON || symId == CHARCON || symId == LPARENT){
+            level++;
+            EXP_type=0;
+            code[codeptr++].Code_name=SAV;
+            for_stack[P_fs++]=para;
+            //para1=para;
+            Expresstion();
+            search_para_type(tempName,EXP_type,para);
+            para=for_stack[--P_fs];
+            //para=para1;
+            para++;
+            code[codeptr].Code_name=TKN;
+            code[codeptr].DS=2;
+            code[codeptr].i=level;
+            code[codeptr++].a=k+para;
+            //getsym();
+        }
+    }while(symId == COMMA) ;
+}
+//＜条件＞    ::=  ＜表达式＞＜关系运算符＞＜表达式＞ //整型表达式之间才能进行关系运算｜＜表达式＞
+void condition(){
+    //error(CONDITION_ILLEGAL_TYPE,linenum);
+    Expresstion();
+    //getsym();
+    int op=0;
+    if(symId == LSS ||symId==LEQ || symId ==GRE || symId == GEQ || symId==EQL || symId == NEQ){
+        if(symId==LSS){
+            op=LSS;
+        }
+        else if(symId==LEQ){
+            op=LEQ;
+        }
+        else if(symId==GRE){
+            op=GRE;
+        }
+        else if(symId==GEQ){
+            op=GEQ;
+        }
+        else if(symId==EQL){
+            op=EQL;
+        }
+        else if(symId==NEQ){
+            op=NEQ;
+        }
+        getsym() ;
+        Expresstion();
+        if(op==LSS){
+            code[codeptr++].Code_name=LES;
+        }
+        else if(op==LEQ){
+            code[codeptr++].Code_name=LOE;
+        }
+        else if(op==GRE){
+            code[codeptr++].Code_name=BIG;
+        }
+        else if(op==GEQ){
+            code[codeptr++].Code_name=BOE;
+        }
+        else if(op==EQL){
+            code[codeptr++].Code_name=EQLL;
+        }
+        else if(op==NEQ){
+            code[codeptr++].Code_name=UEQ;
+        }
+    }
+    else{
+        
+        return ;
+    }
+}
+//＜条件语句＞  ::= if '('＜条件＞')'＜语句＞［else＜语句＞］
+void conditionSta(){
+    int next_code1=0;
+    int next_code2=0;
+    if(symId == IFTK){
+        getsym() ;  //(
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym() ;
+        condition() ;
+        /*if(symId != RPARENT){
+            error(LACK_YOUXIAOKUOH,linenum);
+            do{
+                getsym();
+            }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                   symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                   symId != RETRUNTK && symId != RBRACE);
+            return ;
+        }*/
+        /*-----条件判断跳转------*/
+        code[codeptr].Code_name=ZJP; //0时跳转到else
+        next_code1=codeptr; //保存当前指令地址
+        codeptr++;
+        getsym() ;
+        State();
+        code[codeptr].Code_name=JMP;  //无条件跳转else后面
+        next_code2=codeptr;
+        codeptr++;
+        code[next_code1].a=codeptr;  //保存else地址
+        if(symId == ELSETK){
+            getsym() ;
+            State() ;
+        }
+        code[next_code2].a=codeptr;  //保存结束地址
+    }
+}
+//＜循环语句＞   ::=  while '('＜条件＞')'＜语句＞| do＜语句＞while '('＜条件＞')' |for'('＜标识符＞＝＜表达式＞;＜条件＞;＜标识符＞＝＜标识符＞(+|-)＜步长＞')'＜语句＞
+void loopSta(){
+    int opcode=0;
+    int indexaddr1=0;
+    if(symId == DOTK){
+        getsym() ;
+        for_stack[P_fs++]=codeptr;//do_start
+        State() ;
+        /*if(symId != WHILETK){
+            error(LACK_WHILE,linenum);
+            if(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+               symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+               symId != RETRUNTK ){
+                do{
+                    getsym();
+                }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE&& symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                        symId != RETRUNTK );
+                return ;
+            }
+        }*/
+        getsym() ;
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym() ;
+        condition() ;
+        code[codeptr].Code_name=OPJ;
+        code[codeptr++].a=for_stack[--P_fs];
+       /* if(symId != RPARENT){
+            error(LACK_YOUXIAOKUOH,linenum);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return ;
+        }*/
+        getsym() ;
+    }
+    //while '('＜条件＞')'＜语句＞
+    else if (symId==WHILETK){
+        for_stack[P_fs++]=codeptr;//while_begin
+        getsym();
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym();
+        condition();
+        code[codeptr].Code_name=ZJP;
+        for_stack[P_fs++]=codeptr++;  //while_end
+       /* if(symId!=RPARENT){
+            error(LACK_YOUXIAOKUOH,linenum);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return;
+        }*/
+        getsym();
+        State();
+        code[codeptr].Code_name=JMP;
+        P_fs-=2;
+        code[codeptr++].a=for_stack[P_fs];//while_begin
+        code[for_stack[++P_fs]].a=codeptr; //while_end
+        P_fs--;
+    }
+    //for'('＜标识符＞＝＜表达式＞;＜条件＞;＜标识符＞＝＜标识符＞(+|-)＜步长＞')'＜语句＞
+    else if(symId == FORTK){
+        getsym() ;    //(
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym() ;   //
+        strcpy(idName,a);
+        t = searchSymTab(idName,0);
+        indexaddr=searchSymTab_addr(idName, 0);
+        for_stack[P_fs++]=indexaddr;
+        if(symId != IDENFR){
+            return ;
+        }
+        getsym() ; //=
+        if(symId != ASSIGN){
+            return ;
+        }
+        getsym() ;
+        EXP_type=0;
+        Expresstion();  //表达式
+        code[codeptr].Code_name=TKN;
+        code[codeptr].a=for_stack[--P_fs];
+        code[codeptr++].DS=symbolTable.fuhao[for_stack[P_fs]].DS;
+        /*if(symId != SEMICN){   //;
+            error(LACK_FENHAO,linenum-1);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return ;
+        }*/
+        getsym() ;
+        for_begin=codeptr;  //for_begin 条件判断
+        condition(); //条件
+        code[codeptr].Code_name=ZJP;
+        for_stack[P_fs++]=codeptr;  //for_end
+        codeptr++;
+        code[codeptr].Code_name=JMP;
+        for_start=codeptr;  //for_start
+        codeptr++;
+        /*if(symId != SEMICN){  //;
+            error(LACK_FENHAO,linenum-1);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return ;
+        }*/
+        getsym() ;   // 标识符
+        strcpy(idName,a);
+        t=searchSymTab(idName,0);
+        indexaddr1=searchSymTab_addr(idName, 0);
+        if(symId != IDENFR){
+            return ;
+        }
+        getsym() ;  //=
+        if(symId != ASSIGN){
+            return ;
+        }
+        getsym() ; //标识符
+        strcpy(idName,a);
+        t=searchSymTab(idName,0);
+        indexaddr=searchSymTab_addr(idName,0);
+        code[codeptr].Code_name=PSN;
+        code[codeptr].i=t;
+        code[codeptr].DS=symbolTable.fuhao[indexaddr].DS;
+        for_stack[P_fs++]=codeptr;  //for_mid
+        code[codeptr++].a=indexaddr;
+        if(symId != IDENFR){
+            return ;
+        }
+        getsym() ; //（+|-）
+        if(symId==PLUS)
+            opcode=PLUS;
+        else if(symId==MINU)
+            opcode=MINU;
+        if(symId != PLUS && symId != MINU){
+            return ;
+        }
+        getsym();
+        stepLen();  //步长
+        if(opcode==PLUS){
+            code[codeptr++].Code_name=ADD;
+        }
+        else if(opcode==MINU){
+            code[codeptr++].Code_name=SUB;
+        }
+        code[codeptr].Code_name=TKN;   //步长存入栈
+        code[codeptr].DS=symbolTable.fuhao[indexaddr1].DS;
+        code[codeptr++].a=indexaddr1;
+        code[codeptr].Code_name=JMP;   //步长算完后跳转到条件判断
+        code[codeptr++].a=for_begin;   //条件判断
+        getsym() ;
+        /*if(symId != RPARENT){ //)
+            error(LACK_YOUXIAOKUOH,linenum);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return ;
+        }*/
+        getsym() ;
+        code[for_start].a=codeptr;  //开始 for_start
+        State() ;
+        code[codeptr].Code_name=JMP;
+        code[codeptr++].a=for_stack[--P_fs];//for_mid
+        code[for_stack[--P_fs]].a=codeptr;  //for_end
+    }
+}
+//＜赋值语句＞   ::=  ＜标识符＞＝＜表达式＞|＜标识符＞'['＜表达式＞']'=＜表达式＞
+void AssignSta(){
+    if(symId==IDENFR){
+        int j=0;
+        strcpy(idName,a);
+        getsym() ;
+        if(symId == ASSIGN){
+            j=searchSymTab_addr(idName,0);
+            t = searchSymTab(idName, 0) ;
+            /*if(isconst==1){
+                error(CHANGE_CONST, linenum);
+                isconst=0;
+                do{
+                    getsym();
+                }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE);
+                return;
+            }*/
+            getsym() ;
+            EXP_type=0;
+            Expresstion();
+            code[codeptr].Code_name=TKN;
+            code[codeptr].a=j;
+            if(symbolTable.fuhao[j].DS==1){
+                code[codeptr].DS=1;
+            }
+            else
+                code[codeptr].DS=0;
+            codeptr++;
+            /*if(symId != SEMICN){
+                error(LACK_FENHAO,linenum-1);
+                return;
+            }*/
+            if(symId!=SEMICN)
+                getsym();
+        }
+        else if(symId == LBRACK){//shuzu
+            isArr=1;
+            t = searchSymTab(idName,0);
+            indexaddr=searchSymTab_addr(idName,0);
+            code[codeptr].Code_name=LDA;
+            code[codeptr].i=t;
+            code[codeptr++].a=symbolTable.fuhao[indexaddr].address;
+            for_stack[P_fs++]=indexaddr;
+            getsym() ;
+            EXP_type=0;
+            Expresstion();
+            code[codeptr++].Code_name=ADD;
+            isArr=0;
+            /*if(symId != RBRACK){
+                error(LACK_YOUZHONGKUOH,linenum);
+                return ;
+            }*/
+            getsym() ;
+            if(symId == ASSIGN){
+                getsym() ;
+                EXP_type=0;
+                Expresstion();
+                indexaddr=for_stack[--P_fs];
+                code[codeptr].DS=symbolTable.fuhao[indexaddr].DS;
+                code[codeptr++].Code_name=STA;
+                /*if(symId != SEMICN){
+                    error(LACK_FENHAO,linenum-1);
+                    return ;
+                }*/
+            }
+            if(symId!=SEMICN)
+                getsym();
+        }
+    }
+}
+//＜无返回值函数调用语句＞ ::= ＜标识符＞'('＜值参数表＞')'
+void unreturnSta(){
+    int i;
+    for(i=0;i<unreturnfuns;i++){
+        if(!strcmp(a,unreturnname[i])){
+            strcpy(tempName,a);
+            int j=0;
+            j=searchSymTab_addr(tempName,1);
+            //t = searchSymTab(idName, 1) ;
+            getsym();  //(
+            if(symId!=LPARENT){
+                return ;
+            }
+            getsym();
+            valuelist(j);
+            code[codeptr].Code_name=FUS;
+            for_stack[P_fs++]=codeptr++;
+            code[codeptr].Code_name=JMP;
+            j=symbolTable.fuhao[j].address;
+            code[codeptr++].a=exe_stack[j];
+            code[for_stack[--P_fs]].a=codeptr;
+            t = searchSymTab(tempName, 1) ;
+            /*if(symId!=RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum) ;
+                do{
+                    getsym() ;
+                }while(symId != SEMICN) ;
+                return ;
+            }*/
+            getsym();
+            j=searchSymTab_addr(tempName,1);
+            /*if(symId != SEMICN){
+                error(LACK_FENHAO,linenum) ;
+                do{
+                    getsym() ;
+                }while( symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE) ;
+                return ;
+            }*/
+            return ;
+        }
+    }
+}
+//＜有返回值函数调用语句＞ ::= ＜标识符＞'('＜值参数表＞')'
+int returnSta(){
+    int i;
+    for(i=0;i<returnfuns;i++){
+        if(!strcmp(a,returnname[i])){
+            strcpy(tempName, a);
+            int j=0;
+            j=searchSymTab_addr(tempName,1);
+            getsym();  //(
+            if(symId!=LPARENT){
+                return 0;
+            }
+            getsym();
+            valuelist(j);
+            code[codeptr].Code_name=FUS;
+            for_stack[P_fs++]=codeptr++;
+            code[codeptr].Code_name=JMP;
+            j=symbolTable.fuhao[j].address;
+            code[codeptr++].a=exe_stack[j];
+            code[for_stack[--P_fs]].a=codeptr;
+            t = searchSymTab(tempName, 1) ;
+            //getsym();
+            /*if(symId!=RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym();
+                }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE);
+                return 1;
+            }*/
+            j=searchSymTab_addr(tempName,1);
+            j=symbolTable.fuhao[j].address;
+            getsym();
+            return 1;
+        }
+    }
+    return 0;
+}
+//＜返回语句＞   ::=  return['('＜表达式＞')']
+void ReturnTKsta(){
+    isreturn=0;
+    if(symId == RETRUNTK){
+        getsym() ;
+        if(symId == LPARENT){ //(
+            /*if(isVoid){
+                error(UNRETURN_ILLEGAL_USE,linenum);
+                do{
+                    getsym();
+                }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE);
+                return;
+            }*/
+            getsym() ;
+            EXP_type=0;
+            Expresstion();
+            /*if(symId != RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym();
+                }while (symId != SEMICN);
+                return ;
+            }*/
+            getsym() ;
+            isreturn=1;
+            //code[codeptr++].Code_name=FED;
+            if(EXP_type!=type)
+                error(RETURN_NO_RETURN, linenum);
+        }
+        /*else if(symId != SEMICN){
+            error(LACK_FENHAO,linenum-1);
+            do{
+                getsym();
+            }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                    symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                    symId != RETRUNTK && symId != RBRACE);
+            return;
+        }*/
+        else{
+            return ;
+        }
+    }
+}
+//＜字符串＞   ::=  "｛十进制编码为32,33,35-126的ASCII字符｝"
+void String(){
+    if(symId==STRCON){
+        getsym();
+    }
+}
+//＜读语句＞    ::=  scanf '('＜标识符＞{,＜标识符＞}')'
+void scanfSta(){
+    if(symId == SCANFTK){
+        getsym() ;
+        if(symId == LPARENT){
+            do{
+                getsym() ;
+                strcpy(idName,a);
+                code[codeptr].Code_name=SCF;
+                t=searchSymTab(idName,0);
+                indexaddr=searchSymTab_addr(idName,0);
+                code[codeptr].a=indexaddr;
+                code[codeptr].DS=symbolTable.fuhao[indexaddr].DS;
+                code[codeptr++].i=t;
+                if(symId != IDENFR){
+                    return ;
+                }
+                getsym() ;
+            }while(symId == COMMA) ;
+            /*if(symId != RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym();
+                }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                        symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                        symId != RETRUNTK && symId != RBRACE);
+                return ;
+            }*/
+        }
+        else{
+            return ;
+        }
+    }
+    getsym() ;
+}
+//＜写语句＞    ::= printf '(' ＜字符串＞,＜表达式＞ ')'| printf '('＜字符串＞ ')'| printf '('＜表达式＞')'
+char b[100];
+void printSta(){
+    if(symId == PRINTFTK){
+        getsym() ;
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym() ;
+        if(symId == STRCON){
+            strcpy(b,a);
+            getsym() ;
+            if(symId == COMMA){
+                getsym() ;
+                EXP_type=0;
+                Expresstion();
+                strcpy(string_stack[codeptr],b);
+                code[codeptr++].Code_name=PRC;
+                /*if(symId != RPARENT){
+                    error(LACK_YOUXIAOKUOH,linenum);
+                    do{
+                        getsym();
+                    }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                            symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                            symId != RETRUNTK && symId != RBRACE);
+                    return ;
+                }*/
+            }
+            else{
+                code[codeptr].Code_name=PRS;
+                strcpy(string_stack[codeptr],b);
+                codeptr++;
+                /*if(symId != RPARENT){
+                    if(symId!=SEMICN)
+                        error(LACK_YOUXIAOKUOH,linenum-1);
+                    else
+                        error(LACK_YOUXIAOKUOH,linenum);
+                    if(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE){
+                        do{
+                            getsym();
+                        }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                                symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                                symId != RETRUNTK && symId != RBRACE);
+                    }
+                    return ;
+                }*/
+                
+            }
+        }
+        else{      //表达式
+            EXP_type=0;
+            Expresstion();
+            code[codeptr++].Code_name=PRE;
+            /*if(symId != RPARENT){
+                error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym();
+                }while (symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                        symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                        symId != RETRUNTK && symId != RBRACE);
+                return ;
+            }*/
+        }
+        getsym() ;
+    }
+}
+//＜语句＞    ::= ＜条件语句＞｜＜循环语句＞| '{'＜语句列＞'}'| ＜有返回值函数调用语句＞;
+//|＜无返回值函数调用语句＞;｜＜赋值语句＞;｜＜读语句＞;｜＜写语句＞;｜＜空＞;|＜返回语句＞;
+int State(){
+    /**
+     * ＜条件语句＞
+     */
+    if(symId == IFTK){
+        conditionSta() ;
+        return 1;
+    }
+    /**
+     * ＜循环语句＞
+     */
+    else if(symId == DOTK || symId == FORTK ||symId == WHILETK){
+        loopSta() ;
+        return 1;
+    }
+    /**
+     * ‘{’＜语句列＞‘}’
+     */
+    else if(symId == LBRACE){
+        getsym() ;
+        states() ;
+        if(symId != RBRACE){
+            return 0;
+        }
+        getsym() ;
+        return 1;
+    }
+    /**
+     * ＜赋值语句＞;
+     */
+    else if(symId == IDENFR){
+        strcpy(idName,a);
+        returnSta();
+        unreturnSta();
+        AssignSta();
+        if(symId==SEMICN)
+            getsym() ;
+        return 1;
+        
+    }
+    else if(symId == PRINTFTK){
+        printSta();
+        if(symId != SEMICN){
+            error(LACK_FENHAO,linenum-1);
+            /*if(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+               symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+               symId != RETRUNTK && symId != RBRACE){
+                do{
+                    getsym() ;
+                }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                       symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                       symId != RETRUNTK && symId != RBRACE) ;
+            }*/
+            return 0;
+        }
+        getsym() ;
+        return 1;
+    }
+    
+    else if(symId == SCANFTK){
+        scanfSta() ;
+        /*if(symId != SEMICN){
+            error(LACK_FENHAO,linenum-1);
+            do{
+                getsym() ;
+            }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                   symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                   symId != RETRUNTK && symId != RBRACE) ;
+            return 0;
+        }*/
+        getsym() ;
+        return 1;
+    }
+    else if(symId == RETRUNTK){
+        ReturnTKsta();
+        /*if(symId != SEMICN){
+            error(LACK_FENHAO,linenum-1);
+            do{
+                getsym() ;
+            }while(symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                   symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                   symId != RETRUNTK && symId != RBRACE) ;
+            return 0;
+        }*/
+        getsym() ;
+        if(main_flag==0)
+            code[codeptr++].Code_name=FED;
+        return 1;
+    }
+    else if(symId == SEMICN){
+        getsym() ;
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+//＜语句列＞   ::= ｛＜语句＞｝
+void states(){
+    int i=0;
+    do{
+        i=State() ;
+    }while(symId == IFTK || symId == DOTK || symId == FORTK ||
+           symId == IDENFR || symId == RETRUNTK || symId == SCANFTK ||
+           symId == PRINTFTK || symId == LBRACE || symId == SEMICN ||symId==WHILETK) ;
+    if(i!=0){
+        
+    }
+}
+//＜复合语句＞   ::=  ［＜常量说明＞］［＜变量说明＞］＜语句列＞
+void recomState(){
+    if(symId == CONSTTK){
+        constDeclaration();
+    }
+    if(symId == INTTK || symId == CHARTK){
+        varDeclaration();
+    }
+    states() ;
+}
+//＜有返回值函数定义＞  ::=  ＜声明头部＞'('＜参数表＞')' '{'＜复合语句＞'}'
+void Returnfun(){
+    isreturn=0;
+    //int paratable=0;
+    if(declHead()){
+        getsym();
+        if(symId==LPARENT){//
+            getsym();
+            paraList();
+            if(symId==RPARENT){  //)
+                getsym();  //{
+                if(symId==LBRACE){
+                    getsym();
+                    recomState();
+                    if(isreturn==0){
+                        error(RETURN_NO_RETURN, linenum);
+                    }
+                    getsym();
+                    //code[codeptr++].Code_name=FED;
+                    return;
+                }
+            }
+            else{
+                /*error(LACK_YOUXIAOKUOH,linenum);
+                do{
+                    getsym();
+                }while (symId!=LBRACE);
+                recomState();
+                if(isreturn==0){
+                    error(RETURN_NO_RETURN, linenum);
+                }
+                getsym();
+                return;*/
+            }
+        }
+    }
+}
+//＜主函数＞    ::= void main‘(’‘)’ ‘{’＜复合语句＞‘}’
+void mainfun(){
+    if(symId == MAINTK){
+        strcpy(idName,a);
+        main_flag=codeptr;
+        pushsymTable(idName,0,-1,0,2,0);
+        getsym() ;
+        if(symId != LPARENT){
+            return ;
+        }
+        getsym() ;
+        if(symId != RPARENT){
+            /*error(LACK_YOUXIAOKUOH,linenum);
+            if(symId==LBRACE){
+                getsym() ;
+                recomState();
+                if(symId != RBRACE){
+                    return ;
+                }
+                getsym() ;
+            }
+            do{
+                getsym() ;
+            }while(symId != LBRACE&&symId != IFTK && symId != FORTK && symId != DOTK && symId != LBRACE &&
+                   symId != IDENFR && symId != PRINTFTK && symId != SCANFTK && symId != SEMICN &&
+                   symId != RETRUNTK && symId != RBRACE) ;
+            return;*/
+        }
+        getsym() ;
+        if(symId != LBRACE){
+            return ;
+        }
+        getsym() ;
+        recomState();
+        if(symId != RBRACE){
+            return ;
+        }
+        getsym() ;
+    }
+}
+//＜无返回值函数定义＞  ::= void＜标识符＞'('＜参数表＞')''{'＜复合语句＞'}'
+void Unreturnfun(){
+    if(symId==VOIDTK){
+        isVoid=1;
+        getsym();
+        if(symId==IDENFR){
+            strcpy(idName, a);
+            value=0;
+            para=0;
+            //address=0;
+            address++;
+            pushsymTable(idName,0,para,value,2,address);
+            strcpy(unreturnname[unreturnfuns++],a);
+            getsym(); //(
+            if(symId==LPARENT){
+                getsym();
+                paraList();
+                if(symId==RPARENT){
+                    getsym(); //{
+                    if(symId==LBRACE){
+                        getsym();
+                        recomState();
+                        getsym();
+                    }
+                }
+                else if(symId!=RPARENT){
+                    error(LACK_YOUXIAOKUOH,linenum);
+                    do{
+                        getsym();
+                    }while(symId!=LBRACE);
+                    if(symId==LBRACE){
+                        getsym();
+                        recomState();
+                        getsym();
+                    }
+                }
+                
+            }
+        }
+        code[codeptr++].Code_name=FED;
+    }
+    else if(symId==MAINTK){
+        return;
+    }
+    isVoid=0;
+}
+//＜程序＞    ::= ［＜常量说明＞］［＜变量说明＞］{＜有返回值函数定义＞|＜无返回值函数定义＞}＜主函数＞
+void procedure(){
+    if(symId == CONSTTK){
+        constDeclaration();
+    }
+    if(symId ==INTTK || symId == CHARTK){
+        if(varDeclaration()==1){
+            
+        }
+    }
+    global_flag=1;
+    do{
+        Returnfun();
+        Unreturnfun();
+    }while (symId==INTTK||symId==CHARTK||symId==VOIDTK);
+    if(symId==MAINTK){
+        mainfun();
+    }
+    
+}
+int main(){
+    //ip=fopen("/Users/rebecca/Desktop/testfile.txt","r" );
+    //op=fopen("/Users/rebecca/Desktop/output.txt","w");
+    ip=fopen("testfile.txt","r");
+    op=fopen("error.txt","w");
+    //printf("Hello, World!\n");
+    /*while((cher=getc(ip))!=EOF){
+     line[lenthofline++]=cher;
+     }*/
+    getsym();
+    procedure();
+    exe_codeprt=main_flag;
+    P_OS=address;
+    interpret();
+    //getsym();
+    fclose(ip);
+    fclose(op);
+    return 0;
+}
+
+
+
+
+
+
